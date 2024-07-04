@@ -121,8 +121,28 @@ class Bishop(Piece):
     """
 
     def get_available_moves(self, board):
-        return []
+        current_square = board.find_piece(self)
+        available_moves = self.get_possible_squares(board, current_square)
+        return available_moves
 
+    def get_possible_squares(self, board, current_square):
+        possible_squares = []
+        directions = [-1, -1], [1, 1], [-1, 1], [1, -1]
+        for direction in directions:
+            square = current_square
+            invalid_direction = False
+            while invalid_direction is False:
+                square = Square.at(square.row + direction[0], square.col + direction[1])
+                if board.is_inside_bounds(square) is True:
+                    if board.get_piece(square) is None:
+                        possible_squares.append(square)
+                    else:
+                        if board.get_piece(square).player != self.player:
+                            possible_squares.append(square)
+                        invalid_direction = True
+                else:
+                    invalid_direction = True
+        return possible_squares
 
 class Rook(Piece):
     """
@@ -130,7 +150,28 @@ class Rook(Piece):
     """
 
     def get_available_moves(self, board):
-        return []
+        current_square = board.find_piece(self)
+        available_moves = self.get_possible_squares(board, current_square)
+        return available_moves
+
+    def get_possible_squares(self, board, current_square):
+        possible_squares = []
+        directions = [0, -1], [0, 1], [1, 0], [-1, 0]
+        for direction in directions:
+            square = current_square
+            invalid_direction = False
+            while invalid_direction is False:
+                square = Square.at(square.row + direction[0], square.col + direction[1])
+                if board.is_inside_bounds(square) is True:
+                    if board.get_piece(square) is None:
+                        possible_squares.append(square)
+                    else:
+                        if board.get_piece(square).player != self.player:
+                            possible_squares.append(square)
+                        invalid_direction = True
+                else:
+                    invalid_direction = True
+        return possible_squares
 
 
 class Queen(Piece):
@@ -139,7 +180,28 @@ class Queen(Piece):
     """
 
     def get_available_moves(self, board):
-        return []
+        current_square = board.find_piece(self)
+        available_moves = self.get_possible_squares(board, current_square)
+        return available_moves
+
+    def get_possible_squares(self, board, current_square):
+        possible_squares = []
+        directions = [0, -1], [0, 1], [1, 0], [-1, 0], [-1, -1], [1, 1], [-1, 1], [1, -1]
+        for direction in directions:
+            square = current_square
+            invalid_direction = False
+            while invalid_direction is False:
+                square = Square.at(square.row + direction[0], square.col + direction[1])
+                if board.is_inside_bounds(square) is True:
+                    if board.get_piece(square) is None:
+                        possible_squares.append(square)
+                    else:
+                        if board.get_piece(square).player != self.player:
+                            possible_squares.append(square)
+                        invalid_direction = True
+                else:
+                    invalid_direction = True
+        return possible_squares
 
 
 class King(Piece):
@@ -148,4 +210,21 @@ class King(Piece):
     """
 
     def get_available_moves(self, board):
-        return []
+        current_square = board.find_piece(self)
+        available_moves = self.get_possible_squares(board, current_square)
+        return available_moves
+
+    def get_possible_squares(self, board, current_square):
+        possible_squares = []
+        directions = [0, -1], [0, 1], [1, 0], [-1, 0], [-1, -1], [1, 1], [-1, 1], [1, -1]
+        for direction in directions:
+            square = current_square
+            invalid_direction = False
+            square = Square.at(square.row + direction[0], square.col + direction[1])
+            if board.is_inside_bounds(square) is True:
+                if board.get_piece(square) is None:
+                    possible_squares.append(square)
+                elif board.get_piece(square).player != self.player:
+                    possible_squares.append(square)
+
+        return possible_squares
