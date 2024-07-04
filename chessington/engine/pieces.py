@@ -1,5 +1,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+
+from chessington.engine import board
 from chessington.engine.data import Player, Square
 from typing import TYPE_CHECKING, List
 
@@ -38,42 +40,41 @@ class Pawn(Piece):
     def get_available_moves(self, board) -> List[Square]:
         available_moves = []
         current_square = board.find_piece(self)
+        possible_squares = self.get_possible_squares(board, current_square)
         if self.player == Player.BLACK:
-            square_in_front = Square.at(current_square.row - 1, current_square.col)
-            square_2_in_front = Square.at(current_square.row - 2, current_square.col)
-            square_left_front = Square.at(current_square.row - 1, current_square.col - 1)
-            square_right_front = Square.at(current_square.row - 1, current_square.col + 1)
-
-            if board.is_inside_bounds(square_in_front) is True and board.get_piece(square_in_front) is None:
-                available_moves.append(square_in_front)
-                if current_square.row == 6 and board.get_piece(square_2_in_front) is None:
-                    available_moves.append(square_2_in_front)
-            if board.is_inside_bounds(square_left_front) and board.get_piece(square_left_front) is not None:
-                if board.get_piece(square_left_front).player == Player.WHITE:
-                    available_moves.append(square_left_front)
-            if board.is_inside_bounds(square_left_front) and board.get_piece(square_right_front) is not None:
-                if board.get_piece(square_right_front).player == Player.WHITE:
-                    available_moves.append(square_right_front)
-
-            return available_moves
+            starting_row = 6
+            starting_color = Player.BLACK
         else:
-            square_in_front = Square.at(current_square.row + 1, current_square.col)
-            square_2_in_front = Square.at(current_square.row + 2, current_square.col)
-            square_left_front = Square.at(current_square.row + 1, current_square.col - 1)
-            square_right_front = Square.at(current_square.row + 1, current_square.col + 1)
+            starting_row = 1
+            starting_color = Player.WHITE
 
-            if board.is_inside_bounds(square_in_front) is True and board.get_piece(square_in_front) is None:
-                available_moves.append(square_in_front)
-                if current_square.row == 1 and board.get_piece(square_2_in_front) is None:
-                    available_moves.append(square_2_in_front)
-            if board.is_inside_bounds(square_left_front) and board.get_piece(square_left_front) is not None:
-                if board.get_piece(square_left_front).player == Player.BLACK:
-                    available_moves.append(square_left_front)
-            if board.is_inside_bounds(square_left_front) and board.get_piece(square_right_front) is not None:
-                if board.get_piece(square_right_front).player == Player.BLACK:
-                    available_moves.append(square_right_front)
+        if board.is_inside_bounds(possible_squares[0]) is True and board.get_piece(possible_squares[0]) is None:
+            available_moves.append(possible_squares[0])
+            if board.is_inside_bounds(possible_squares[1]) is True and board.get_piece(possible_squares[1]) is None:
+                if self.player == starting_color and current_square.row == starting_row:
+                    available_moves.append(possible_squares[1])
 
-            return available_moves
+        for i in (2,3):
+            if board.is_inside_bounds(possible_squares[i]) is True and board.get_piece(possible_squares[i]) is not None:
+                if board.get_piece(possible_squares[i]).player != self.player:
+                    available_moves.append(possible_squares[i])
+
+        return available_moves
+
+    def get_possible_squares(self, board, current_square):
+        possible_squares = []
+        if board.get_piece(current_square).player == Player.BLACK:
+            possible_squares.append(Square.at(current_square.row - 1, current_square.col))  # 1 up -> 0
+            possible_squares.append(Square.at(current_square.row - 2, current_square.col))  # 2 up -> 1
+            possible_squares.append(Square.at(current_square.row - 1, current_square.col - 1))  # take left -> 2
+            possible_squares.append(Square.at(current_square.row - 1, current_square.col + 1))  # take right -> 3
+        else:
+            possible_squares.append(Square.at(current_square.row + 1, current_square.col))
+            possible_squares.append(Square.at(current_square.row + 2, current_square.col))
+            possible_squares.append(Square.at(current_square.row + 1, current_square.col - 1))
+            possible_squares.append(Square.at(current_square.row + 1, current_square.col + 1))
+
+        return possible_squares
 
 
 class Knight(Piece):
@@ -82,7 +83,36 @@ class Knight(Piece):
     """
 
     def get_available_moves(self, board):
-        return []
+        available_moves = []
+        current_square = board.find_piece(self)
+        possible_squares = self.get_possible_squares(board, current_square)
+
+        for square in possible_squares:
+            if board.get_piece(square) is None:
+                available_moves.append(square)
+            elif board.get_piece(square).player != self.player:
+                available_moves.append(square)
+
+        return available_moves
+
+    def get_possible_squares(self, board, current_square):
+        possible_squares = []
+        possible_squares.append(Square(current_square.row - 1, current_square.col - 2))
+        possible_squares.append(Square.at(current_square.row + 1, current_square.col - 2))
+        possible_squares.append(Square.at(current_square.row + 2, current_square.col - 1))
+        possible_squares.append(Square.at(current_square.row + 2, current_square.col + 1))
+        possible_squares.append(Square.at(current_square.row + 1, current_square.col + 2))
+        possible_squares.append(Square.at(current_square.row - 1, current_square.col + 2))
+        possible_squares.append(Square.at(current_square.row - 2, current_square.col + 1))
+        possible_squares.append(Square.at(current_square.row - 2, current_square.col - 1))
+        return self.get_legal_squares(board, possible_squares)
+
+    def get_legal_squares(self, board, possible_squares):
+        legal_squares = []
+        for square in possible_squares:
+            if board.is_inside_bounds(square) is True:
+                legal_squares.append(square)
+        return legal_squares
 
 
 class Bishop(Piece):
