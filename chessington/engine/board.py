@@ -8,6 +8,7 @@ from chessington.engine.pieces import Pawn, Knight, Bishop, Rook, Queen, King
 
 BOARD_SIZE = 8
 
+
 class Board:
     """
     A representation of the chess board, and the pieces on it.
@@ -77,3 +78,11 @@ class Board:
             self.set_piece(to_square, moving_piece)
             self.set_piece(from_square, None)
             self.current_player = self.current_player.opponent()
+
+    def is_inside_bounds(self, square):
+        """
+        Checks if the given square is inside the bounds of the board
+        """
+        if 0 <= square.row <= 7 and 0 <= square.col <= 7:
+            return True
+        return False

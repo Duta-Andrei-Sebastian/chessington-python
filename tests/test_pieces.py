@@ -222,10 +222,8 @@ class TestPawns:
         pawn = Pawn(Player.WHITE)
         square = Square.at(7, 4)
         board.set_piece(square, pawn)
-
         # Act
         moves = pawn.get_available_moves(board)
-
         # Assert
         assert len(moves) == 0
 
