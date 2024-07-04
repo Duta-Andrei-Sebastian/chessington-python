@@ -1787,4 +1787,4 @@ class TestPawns:
         assert Square.at(3, 5) not in moves
         assert Square.at(4, 3) not in moves
         assert Square.at(4, 4) not in moves
-        assert Square.at(4, 5) not in moves
+        assert Square.at(4, 5) not in moves#

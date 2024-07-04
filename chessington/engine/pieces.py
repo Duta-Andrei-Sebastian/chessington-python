@@ -173,7 +173,7 @@ class Rook(Piece):
                     invalid_direction = True
         return possible_squares
 
-
+#
 class Queen(Piece):
     """
     A class representing a chess queen.
