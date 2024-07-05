@@ -5,8 +5,8 @@ this is just a "dumb" board that will let you move pieces around as you like.
 
 from chessington.engine.data import Player, Square
 from chessington.engine.pieces import Pawn, Knight, Bishop, Rook, Queen, King
-
 BOARD_SIZE = 8
+
 
 class Board:
     """
@@ -16,6 +16,9 @@ class Board:
     def __init__(self, player, board_state):
         self.current_player = Player.WHITE
         self.board = board_state
+        self.last_piece_moved = None
+        self.kings_pos = {Player.WHITE: Square.at(0, int(BOARD_SIZE / 2)),
+                  Player.BLACK: Square.at(BOARD_SIZE - 1, int(BOARD_SIZE / 2))}
 
     @staticmethod
     def empty():
@@ -73,7 +76,43 @@ class Board:
         Moves the piece from the given starting square to the given destination square.
         """
         moving_piece = self.get_piece(from_square)
+        is_square_empty = self.get_piece(to_square) is None
         if moving_piece is not None and moving_piece.player == self.current_player:
             self.set_piece(to_square, moving_piece)
             self.set_piece(from_square, None)
-            self.current_player = self.current_player.opponent()
+            self.last_piece_moved = moving_piece
+            if isinstance(moving_piece, Pawn) and abs(to_square.row - from_square.row) == 2:
+                moving_piece.has_moved_2 = 1
+            if isinstance(moving_piece, Pawn) and abs(to_square.col - from_square.col) == 1 and abs(to_square.row - from_square.row) == 1 and is_square_empty is True:
+                self.set_piece(Square.at(from_square.row, to_square.col), None)
+        if isinstance(moving_piece, Pawn) is True and (to_square.row == 7 or to_square.row == 0):
+            self.set_piece(to_square, None)
+            #promotion_window(moving_piece.player)
+            queen = Queen(moving_piece.player)
+            self.set_piece(to_square,queen)
+        if type(moving_piece) is King:
+            self.kings_pos[self.current_player] = Square.at(to_square.row, to_square.col)
+        self.current_player = self.current_player.opponent()
+
+    @staticmethod
+    def is_inside_bounds(square : Square) -> bool:
+        """
+        Checks if the given square is inside the bounds of the board
+        """
+        return 0 <= square.row < BOARD_SIZE and 0 <= square.col < BOARD_SIZE
+
+    def is_check(self, board, king_square, current_player):
+        if king_square is None:
+            king_square = self.kings_pos[current_player]
+
+        for row in range(0,BOARD_SIZE):
+            for col in range(0,BOARD_SIZE):
+                piece_square = Square.at(row, col)
+
+                piece = self.get_piece(piece_square)
+
+                if piece is not None and piece.player == current_player.opponent():
+                    if piece.get_all_moves(board) and king_square in piece.get_all_moves(self):
+                        return True
+
+        return False
