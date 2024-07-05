@@ -26,6 +26,7 @@ class Piece(ABC):
         for square in square_list:
             if self.is_move_legal(board, current_square, square) and isinstance(board.get_piece(square), King) is False:
                 final_square_list.append(square)
+        print(final_square_list)
         return final_square_list
 
     @abstractmethod
@@ -95,7 +96,7 @@ class Pawn(Piece):
 
         for i in (2,3):
             if board.is_inside_bounds(possible_squares[i]) is True and board.get_piece(possible_squares[i]) is not None:
-                if board.get_piece(possible_squares[i]).player != self.player and isinstance(board.get_piece(possible_squares[i]),King) is False:
+                if board.get_piece(possible_squares[i]).player != self.player:
                     available_moves.append(possible_squares[i])
 
         if current_square.row == 4 or current_square.row == 3:
@@ -150,7 +151,7 @@ class Knight(Piece):
             if board.is_inside_bounds(square) is True:
                 if board.get_piece(square) is None:
                     possible_squares.append(square)
-                elif board.get_piece(square).player != self.player and isinstance(board.get_piece(square), King) is False:
+                elif board.get_piece(square).player != self.player:
                         possible_squares.append(square)
         return possible_squares
 
@@ -207,6 +208,6 @@ class King(Piece):
             if board.is_inside_bounds(square) is True:
                 if board.get_piece(square) is None:
                     possible_squares.append(square)
-                elif board.get_piece(square).player != self.player and isinstance(board.get_piece(square), King) is False:
+                elif board.get_piece(square).player != self.player:
                         possible_squares.append(square)
         return possible_squares
