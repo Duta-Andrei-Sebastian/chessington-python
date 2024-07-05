@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-
+import copy
 from chessington.engine import board
 from chessington.engine.data import Player, Square
 from typing import TYPE_CHECKING, List
@@ -18,8 +18,18 @@ class Piece(ABC):
         self.player = player
         self.is_first_move = 0
 
-    @abstractmethod
     def get_available_moves(self, board: Board) -> List[Square]:
+        square_list = self.get_all_moves(board)
+        final_square_list = []
+        current_square = board.find_piece(self)
+
+        for square in square_list:
+            if self.is_move_legal(board, current_square, square) and isinstance(board.get_piece(square), King) is False:
+                final_square_list.append(square)
+        return final_square_list
+
+    @abstractmethod
+    def get_all_moves(self, board: Board) -> List[Square]:
         """
         Get all squares that the piece is allowed to move to.
         """
@@ -34,6 +44,16 @@ class Piece(ABC):
             self.is_first_move = 1
         board.move_piece(current_square, new_square)
 
+    def is_move_legal(self, board: Board, current_square: Square, next_square) -> bool:
+        copy_board = copy.deepcopy(board)
+
+        copy_board.move_piece(current_square, next_square)
+        king_square = None
+        if copy_board.is_check(copy_board, king_square,self.player):
+            return False
+
+        return True
+
     def travel_along_directions_continuous(self, board, current_square, directions):
         possible_squares = []
         for direction in directions:
@@ -45,7 +65,7 @@ class Piece(ABC):
                     if board.get_piece(square) is None:
                         possible_squares.append(square)
                     else:
-                        if board.get_piece(square).player != self.player and isinstance(board.get_piece(square), King) is False:
+                        if board.get_piece(square).player != self.player:
                             possible_squares.append(square)
                         invalid_direction = True
                 else:
@@ -62,7 +82,7 @@ class Pawn(Piece):
         super().__init__(player)
         self.has_moved_2 = 0
 
-    def get_available_moves(self, board) -> List[Square]:
+    def get_all_moves(self, board) -> List[Square]:
         available_moves = []
         current_square = board.find_piece(self)
         possible_squares = self.get_possible_squares(current_square)
@@ -117,7 +137,7 @@ class Knight(Piece):
     A class representing a chess knight.
     """
 
-    def get_available_moves(self, board):
+    def get_all_moves(self, board):
         current_square = board.find_piece(self)
         directions = [-1, -2], [1, -2], [2, -1], [2, 1], [1, 2], [-1, 2], [-2, 1], [-2, -1]
         return self.travel_along_directions_knight(board, current_square, directions)
@@ -140,7 +160,7 @@ class Bishop(Piece):
     A class representing a chess bishop.
     """
 
-    def get_available_moves(self, board):
+    def get_all_moves(self, board):
         current_square = board.find_piece(self)
         directions = [-1, -1], [1, 1], [-1, 1], [1, -1]
         return self.travel_along_directions_continuous(board, current_square, directions)
@@ -151,7 +171,7 @@ class Rook(Piece):
     A class representing a chess rook.
     """
 
-    def get_available_moves(self, board):
+    def get_all_moves(self, board):
         current_square = board.find_piece(self)
         directions = [0, -1], [0, 1], [1, 0], [-1, 0]
         directions = [0, -1], [0, 1], [1, 0], [-1, 0]
@@ -163,7 +183,7 @@ class Queen(Piece):
     A class representing a chess queen.
     """
 
-    def get_available_moves(self, board):
+    def get_all_moves(self, board):
         current_square = board.find_piece(self)
         directions = [0, -1], [0, 1], [1, 0], [-1, 0], [-1, -1], [1, 1], [-1, 1], [1, -1]
         return self.travel_along_directions_continuous(board, current_square, directions)
@@ -174,7 +194,7 @@ class King(Piece):
     A class representing a chess king.
     """
 
-    def get_available_moves(self, board):
+    def get_all_moves(self, board):
         current_square = board.find_piece(self)
         directions = [0, -1], [0, 1], [1, 0], [-1, 0], [-1, -1], [1, 1], [-1, 1], [1, -1]
         return self.travel_along_directions_king(board, current_square, directions)

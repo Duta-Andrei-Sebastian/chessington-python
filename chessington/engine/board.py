@@ -5,7 +5,6 @@ this is just a "dumb" board that will let you move pieces around as you like.
 
 from chessington.engine.data import Player, Square
 from chessington.engine.pieces import Pawn, Knight, Bishop, Rook, Queen, King
-from chessington.ui.PromotionUI import promotion_window
 BOARD_SIZE = 8
 
 
@@ -18,6 +17,8 @@ class Board:
         self.current_player = Player.WHITE
         self.board = board_state
         self.last_piece_moved = None
+        self.kings_pos = {Player.WHITE: Square.at(0, int(BOARD_SIZE / 2)),
+                  Player.BLACK: Square.at(BOARD_SIZE - 1, int(BOARD_SIZE / 2))}
 
     @staticmethod
     def empty():
@@ -84,12 +85,14 @@ class Board:
                 moving_piece.has_moved_2 = 1
             if isinstance(moving_piece, Pawn) and abs(to_square.col - from_square.col) == 1 and abs(to_square.row - from_square.row) == 1 and is_square_empty is True:
                 self.set_piece(Square.at(from_square.row, to_square.col), None)
-            self.current_player = self.current_player.opponent()
         if isinstance(moving_piece, Pawn) is True and (to_square.row == 7 or to_square.row == 0):
             self.set_piece(to_square, None)
             #promotion_window(moving_piece.player)
             queen = Queen(moving_piece.player)
             self.set_piece(to_square,queen)
+        if type(moving_piece) is King:
+            self.kings_pos[self.current_player] = Square.at(to_square.row, to_square.col)
+        self.current_player = self.current_player.opponent()
 
     @staticmethod
     def is_inside_bounds(square : Square) -> bool:
@@ -98,12 +101,18 @@ class Board:
         """
         return 0 <= square.row < BOARD_SIZE and 0 <= square.col < BOARD_SIZE
 
-    def is_in_check (self, player, checked_square: Square) -> bool:
-        all_available = []
-        for i in range(0,BOARD_SIZE):
-            for j in range(0, BOARD_SIZE):
-                current_square = Square.at(i, j)
-                piece = self.get_piece(current_square)
-                if piece is not None and piece.player != player:
-                    all_available.extend(piece.get_available_moves())
-        return checked_square in all_available
+    def is_check(self, board, king_square, current_player):
+        if king_square is None:
+            king_square = self.kings_pos[current_player]
+
+        for row in range(0,BOARD_SIZE):
+            for col in range(0,BOARD_SIZE):
+                piece_square = Square.at(row, col)
+
+                piece = self.get_piece(piece_square)
+
+                if piece is not None and piece.player == current_player.opponent():
+                    if piece.get_all_moves(board) and king_square in piece.get_all_moves(self):
+                        return True
+
+        return False
