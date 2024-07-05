@@ -1,6 +1,7 @@
 from chessington.engine.board import Board
 from chessington.engine.data import Player, Square
 from chessington.engine.pieces import Pawn, Knight, Bishop, Rook, Queen, King
+from chessington.engine.pieces import is_in_check
 
 
 class TestPawns:
@@ -1788,3 +1789,33 @@ class TestPawns:
         assert Square.at(4, 3) not in moves
         assert Square.at(4, 4) not in moves
         assert Square.at(4, 5) not in moves#
+
+    @staticmethod
+    def test_white_pawn_cannot_capture_king ():
+        board = Board.empty()
+        king = King(Player.BLACK)
+        king_square = Square.at(3, 4)
+        board.set_piece(king_square, king)
+
+        pawn = Pawn(Player.WHITE)
+        pawn_square = Square.at(2, 3)
+        board.set_piece(pawn_square, pawn)
+
+        moves = pawn.get_available_moves(board)
+
+        assert king_square not in moves
+
+    @staticmethod
+    def check_test_both_black ():
+        print(1)
+        board = Board.empty()
+        queen = Queen(Player.BLACK)
+        king = King(Player.BLACK)
+        queen_square = Square.at(2, 6)
+        king_square = Square.at(2, 2)
+        board.set_piece(king_square, king)
+        board.set_piece(queen_square, queen)
+
+        value = is_in_check(king.player,king_square)
+
+        assert 0 is 1

@@ -79,10 +79,9 @@ class Board:
             self.set_piece(from_square, None)
             self.current_player = self.current_player.opponent()
 
-    def is_inside_bounds(self, square):
+    @staticmethod
+    def is_inside_bounds(square : Square) -> bool:
         """
         Checks if the given square is inside the bounds of the board
         """
-        if 0 <= square.row <= 7 and 0 <= square.col <= 7:
-            return True
-        return False
+        return 0 <= square.row < BOARD_SIZE and 0 <= square.col < BOARD_SIZE

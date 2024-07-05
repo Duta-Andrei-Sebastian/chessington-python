@@ -16,6 +16,7 @@ class Piece(ABC):
 
     def __init__(self, player: Player):
         self.player = player
+        self.is_first_move = 0
 
     @abstractmethod
     def get_available_moves(self, board: Board) -> List[Square]:
@@ -29,7 +30,27 @@ class Piece(ABC):
         Move this piece to the given square on the board.
         """
         current_square = board.find_piece(self)
+        if self.is_first_move == 0:
+            self.is_first_move = 1
         board.move_piece(current_square, new_square)
+
+    def travel_along_directions_continuous(self, board, current_square, directions):
+        possible_squares = []
+        for direction in directions:
+            square = current_square
+            invalid_direction = False
+            while invalid_direction is False:
+                square = Square.at(square.row + direction[0], square.col + direction[1])
+                if board.is_inside_bounds(square) is True:
+                    if board.get_piece(square) is None:
+                        possible_squares.append(square)
+                    else:
+                        if board.get_piece(square).player != self.player and isinstance(board.get_piece(square), King) is False:
+                            possible_squares.append(square)
+                        invalid_direction = True
+                else:
+                    invalid_direction = True
+        return possible_squares
 
 
 class Pawn(Piece):
@@ -41,38 +62,29 @@ class Pawn(Piece):
         available_moves = []
         current_square = board.find_piece(self)
         possible_squares = self.get_possible_squares(board, current_square)
-        if self.player == Player.BLACK:
-            starting_row = 6
-            starting_color = Player.BLACK
-        else:
-            starting_row = 1
-            starting_color = Player.WHITE
 
         if board.is_inside_bounds(possible_squares[0]) is True and board.get_piece(possible_squares[0]) is None:
             available_moves.append(possible_squares[0])
             if board.is_inside_bounds(possible_squares[1]) is True and board.get_piece(possible_squares[1]) is None:
-                if self.player == starting_color and current_square.row == starting_row:
+                if self.is_first_move == 0:
                     available_moves.append(possible_squares[1])
 
         for i in (2,3):
             if board.is_inside_bounds(possible_squares[i]) is True and board.get_piece(possible_squares[i]) is not None:
-                if board.get_piece(possible_squares[i]).player != self.player:
+                if board.get_piece(possible_squares[i]).player != self.player and isinstance(board.get_piece(possible_squares[i]),King) is False:
+                    print(board.get_piece(possible_squares[i]))
                     available_moves.append(possible_squares[i])
-
         return available_moves
 
     def get_possible_squares(self, board, current_square):
         possible_squares = []
+        multiplier = 1
         if board.get_piece(current_square).player == Player.BLACK:
-            possible_squares.append(Square.at(current_square.row - 1, current_square.col))  # 1 up -> 0
-            possible_squares.append(Square.at(current_square.row - 2, current_square.col))  # 2 up -> 1
-            possible_squares.append(Square.at(current_square.row - 1, current_square.col - 1))  # take left -> 2
-            possible_squares.append(Square.at(current_square.row - 1, current_square.col + 1))  # take right -> 3
-        else:
-            possible_squares.append(Square.at(current_square.row + 1, current_square.col))
-            possible_squares.append(Square.at(current_square.row + 2, current_square.col))
-            possible_squares.append(Square.at(current_square.row + 1, current_square.col - 1))
-            possible_squares.append(Square.at(current_square.row + 1, current_square.col + 1))
+            multiplier = -1
+        possible_squares.append(Square.at(current_square.row + multiplier, current_square.col))  # 1 up -> 0
+        possible_squares.append(Square.at(current_square.row + 2 * multiplier, current_square.col))  # 2 up -> 1
+        possible_squares.append(Square.at(current_square.row + multiplier, current_square.col - 1))  # take left -> 2
+        possible_squares.append(Square.at(current_square.row + multiplier, current_square.col + 1))  # take right -> 3
 
         return possible_squares
 
@@ -83,36 +95,21 @@ class Knight(Piece):
     """
 
     def get_available_moves(self, board):
-        available_moves = []
         current_square = board.find_piece(self)
-        possible_squares = self.get_possible_squares(board, current_square)
+        directions = [-1, -2], [1, -2], [2, -1], [2, 1], [1, 2], [-1, 2], [-2, 1], [-2, -1]
+        return self.travel_along_directions_knight(board, current_square, directions)
 
-        for square in possible_squares:
-            if board.get_piece(square) is None:
-                available_moves.append(square)
-            elif board.get_piece(square).player != self.player:
-                available_moves.append(square)
-
-        return available_moves
-
-    def get_possible_squares(self, board, current_square):
+    def travel_along_directions_knight(self, board, current_square, directions):
         possible_squares = []
-        possible_squares.append(Square(current_square.row - 1, current_square.col - 2))
-        possible_squares.append(Square.at(current_square.row + 1, current_square.col - 2))
-        possible_squares.append(Square.at(current_square.row + 2, current_square.col - 1))
-        possible_squares.append(Square.at(current_square.row + 2, current_square.col + 1))
-        possible_squares.append(Square.at(current_square.row + 1, current_square.col + 2))
-        possible_squares.append(Square.at(current_square.row - 1, current_square.col + 2))
-        possible_squares.append(Square.at(current_square.row - 2, current_square.col + 1))
-        possible_squares.append(Square.at(current_square.row - 2, current_square.col - 1))
-        return self.get_legal_squares(board, possible_squares)
-
-    def get_legal_squares(self, board, possible_squares):
-        legal_squares = []
-        for square in possible_squares:
+        for direction in directions:
+            square = current_square
+            square = Square.at(square.row + direction[0], square.col + direction[1])
             if board.is_inside_bounds(square) is True:
-                legal_squares.append(square)
-        return legal_squares
+                if board.get_piece(square) is None:
+                    possible_squares.append(square)
+                elif board.get_piece(square).player != self.player and isinstance(board.get_piece(square), King) is False:
+                        possible_squares.append(square)
+        return possible_squares
 
 
 class Bishop(Piece):
@@ -122,27 +119,9 @@ class Bishop(Piece):
 
     def get_available_moves(self, board):
         current_square = board.find_piece(self)
-        available_moves = self.get_possible_squares(board, current_square)
-        return available_moves
-
-    def get_possible_squares(self, board, current_square):
-        possible_squares = []
         directions = [-1, -1], [1, 1], [-1, 1], [1, -1]
-        for direction in directions:
-            square = current_square
-            invalid_direction = False
-            while invalid_direction is False:
-                square = Square.at(square.row + direction[0], square.col + direction[1])
-                if board.is_inside_bounds(square) is True:
-                    if board.get_piece(square) is None:
-                        possible_squares.append(square)
-                    else:
-                        if board.get_piece(square).player != self.player:
-                            possible_squares.append(square)
-                        invalid_direction = True
-                else:
-                    invalid_direction = True
-        return possible_squares
+        return self.travel_along_directions_continuous(board, current_square, directions)
+
 
 class Rook(Piece):
     """
@@ -151,27 +130,9 @@ class Rook(Piece):
 
     def get_available_moves(self, board):
         current_square = board.find_piece(self)
-        available_moves = self.get_possible_squares(board, current_square)
-        return available_moves
-
-    def get_possible_squares(self, board, current_square):
-        possible_squares = []
         directions = [0, -1], [0, 1], [1, 0], [-1, 0]
-        for direction in directions:
-            square = current_square
-            invalid_direction = False
-            while invalid_direction is False:
-                square = Square.at(square.row + direction[0], square.col + direction[1])
-                if board.is_inside_bounds(square) is True:
-                    if board.get_piece(square) is None:
-                        possible_squares.append(square)
-                    else:
-                        if board.get_piece(square).player != self.player:
-                            possible_squares.append(square)
-                        invalid_direction = True
-                else:
-                    invalid_direction = True
-        return possible_squares
+        directions = [0, -1], [0, 1], [1, 0], [-1, 0]
+        return self.travel_along_directions_continuous(board, current_square, directions)
 
 #
 class Queen(Piece):
@@ -181,27 +142,8 @@ class Queen(Piece):
 
     def get_available_moves(self, board):
         current_square = board.find_piece(self)
-        available_moves = self.get_possible_squares(board, current_square)
-        return available_moves
-
-    def get_possible_squares(self, board, current_square):
-        possible_squares = []
         directions = [0, -1], [0, 1], [1, 0], [-1, 0], [-1, -1], [1, 1], [-1, 1], [1, -1]
-        for direction in directions:
-            square = current_square
-            invalid_direction = False
-            while invalid_direction is False:
-                square = Square.at(square.row + direction[0], square.col + direction[1])
-                if board.is_inside_bounds(square) is True:
-                    if board.get_piece(square) is None:
-                        possible_squares.append(square)
-                    else:
-                        if board.get_piece(square).player != self.player:
-                            possible_squares.append(square)
-                        invalid_direction = True
-                else:
-                    invalid_direction = True
-        return possible_squares
+        return self.travel_along_directions_continuous(board, current_square, directions)
 
 
 class King(Piece):
@@ -211,20 +153,17 @@ class King(Piece):
 
     def get_available_moves(self, board):
         current_square = board.find_piece(self)
-        available_moves = self.get_possible_squares(board, current_square)
-        return available_moves
-
-    def get_possible_squares(self, board, current_square):
-        possible_squares = []
         directions = [0, -1], [0, 1], [1, 0], [-1, 0], [-1, -1], [1, 1], [-1, 1], [1, -1]
+        return self.travel_along_directions_king(board, current_square, directions)
+
+    def travel_along_directions_king(self, board, current_square, directions):
+        possible_squares = []
         for direction in directions:
             square = current_square
-            invalid_direction = False
             square = Square.at(square.row + direction[0], square.col + direction[1])
             if board.is_inside_bounds(square) is True:
                 if board.get_piece(square) is None:
                     possible_squares.append(square)
-                elif board.get_piece(square).player != self.player:
-                    possible_squares.append(square)
-
+                elif board.get_piece(square).player != self.player and isinstance(board.get_piece(square), King) is False:
+                        possible_squares.append(square)
         return possible_squares
