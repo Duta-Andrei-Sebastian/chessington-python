@@ -57,11 +57,15 @@ class Pawn(Piece):
     """
     A class representing a chess pawn.
     """
+    def __init__(self, player: Player):
+
+        super().__init__(player)
+        self.has_moved_2 = 0
 
     def get_available_moves(self, board) -> List[Square]:
         available_moves = []
         current_square = board.find_piece(self)
-        possible_squares = self.get_possible_squares(board, current_square)
+        possible_squares = self.get_possible_squares(current_square)
 
         if board.is_inside_bounds(possible_squares[0]) is True and board.get_piece(possible_squares[0]) is None:
             available_moves.append(possible_squares[0])
@@ -72,21 +76,40 @@ class Pawn(Piece):
         for i in (2,3):
             if board.is_inside_bounds(possible_squares[i]) is True and board.get_piece(possible_squares[i]) is not None:
                 if board.get_piece(possible_squares[i]).player != self.player and isinstance(board.get_piece(possible_squares[i]),King) is False:
-                    print(board.get_piece(possible_squares[i]))
                     available_moves.append(possible_squares[i])
+
+        if current_square.row == 4 or current_square.row == 3:
+            available_moves = self.check_en_passant(board, current_square, available_moves)
         return available_moves
 
-    def get_possible_squares(self, board, current_square):
+    def get_possible_squares(self, current_square):
         possible_squares = []
         multiplier = 1
-        if board.get_piece(current_square).player == Player.BLACK:
+        if self.player == Player.BLACK:
             multiplier = -1
         possible_squares.append(Square.at(current_square.row + multiplier, current_square.col))  # 1 up -> 0
         possible_squares.append(Square.at(current_square.row + 2 * multiplier, current_square.col))  # 2 up -> 1
         possible_squares.append(Square.at(current_square.row + multiplier, current_square.col - 1))  # take left -> 2
         possible_squares.append(Square.at(current_square.row + multiplier, current_square.col + 1))  # take right -> 3
+        possible_squares.append(Square.at(current_square.row, current_square.col + 1))
+        possible_squares.append(Square.at(current_square.row, current_square.col - 1))
 
         return possible_squares
+
+    def check_en_passant(self, board, current_square, available_moves):
+        multiplier = 1
+        if self.player == Player.BLACK:
+            multiplier = -1
+        pieces = [board.get_piece(Square.at(current_square.row, current_square.col - 1)), board.get_piece(Square.at(current_square.row, current_square.col + 1))]
+        square = [Square.at(current_square.row + multiplier, current_square.col - 1), Square.at(current_square.row + multiplier, current_square.col + 1)]
+        empty_space = [board.get_piece(square[0]), board.get_piece(square[1])]
+        for i in (0,1):
+            if pieces[i] is not None and empty_space[i] is None:
+                if isinstance(pieces[i], Pawn) is True and pieces[i].has_moved_2 == 1 and board.last_piece_moved == pieces[i] and pieces[i].player != self.player:
+                    available_moves.append(square[i])
+        return available_moves
+
+
 
 
 class Knight(Piece):
